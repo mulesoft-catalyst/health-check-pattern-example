@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="0de78bce-fb89-4c5f-897b-06ed5a167935" persistent="false"/>
+	<flow name="get-flightsFlow" doc:id="63a12fba-2c7b-4d8c-91e0-84d9a226c915" >
+		<set-variable value="#[now()]" doc:name="Set Before System Access Time" doc:id="da7bfb82-b78b-4dbd-bfd8-dbbb0fe2ca43" variableName="beforeSystemAccess"/>
+		<logger level="INFO" doc:name="Log Before System Access" doc:id="bf351339-67ab-4876-8aa7-81980d498537" message="#['Before System Response Time']" />
+		<flow-ref doc:name="System Access" doc:id="1895f8ec-a67b-4c0a-a7b8-84aa9af5b4b2" name="system-accessSub_Flow"/>
+		<logger level="INFO" doc:name="Log After System Access" doc:id="2ec7d776-ace1-4144-af1b-d5d64445d60e" message="#['After System Response Time']" />
+		<set-variable value="#[now()]" doc:name="Set After System Access Time" doc:id="9f9890b1-e374-4015-b6d3-5481761a9c33" variableName="afterSystemAccess"/>
+		<ee:transform doc:name="Format Response" doc:id="191e0553-3e31-419a-aeb9-e2d639c8fa54" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  apiStatus: {
+    name: "Passenger Reservations System API",
+    status: "OK",
+    statusCode: "200",
+    description: "Flights successfully retrieved.",
+    transactionId: "1c7968f0-3102-11eb-adc1-0242ac120002",
+    timestamp: 1568052807372
+  },
+  flights: [
+    {
+      aircraft: {
+        registrationNumber: "495120-DL"
+      },
+      leg: {
+        fltNumber: "342",
+        rotation: {
+          airline: {
+            airlineName: "Southzest"
+          },
+          aircraftModel: {
+            manufacturer: "Boeing",
+            modelNumber: "737"
+          },
+          frequency: "MTWRFSU",
+          startEffectiveDate: "2019-02-01" as Date,
+          endEffectiveDate: "2019-02-28" as Date,
+          legs: [
+            "342", 
+            "732", 
+            "456", 
+            "109"
+          ]
+        },
+        origin: {
+          airportCode: "LAX",
+          airportName: "Los Angeles International Airport"
+        },
+        destination: {
+          airportCode: "DFW",
+          airportName: "Dallas/Fort Worth International Airport"
+        },
+        scheduledDepartureTime: "2019-02-28T16:00:00.000Z" as DateTime,
+        scheduledArrivalTime: "2019-02-28T19:00:00.000Z" as DateTime
+      },
+      actualDepartureTime: "2019-02-28T16:11:41.090Z" as DateTime,
+      actualArrivalTime: "2019-02-28T18:49:18.060Z"  as DateTime
+    }, 
+    {
+      aircraft: {
+        registrationNumber: "849388-CL"
+      },
+      leg: {
+        fltNumber: "123",
+        rotation: {
+          airline: {
+            airlineName: "Southzest"
+          },
+          aircraftModel: {
+            manufacturer: "Boeing",
+            modelNumber: "737"
+          },
+          frequency: "MTWRFSU",
+          startEffectiveDate: "2019-02-01" as Date,
+          endEffectiveDate: "2019-02-28" as Date,
+          legs: [
+            "898", 
+            "987", 
+            "872", 
+            "459", 
+            "123"
+          ]
+        },
+        origin: {
+          airportCode: "DFW",
+          airportName: "Dallas/Fort Worth International Airport"
+        },
+        destination: {
+          airportCode: "DCA",
+          airportName: "Ronald Reagan Washington National Airport"
+        },
+        scheduledDepartureTime: "2019-02-28T19:40:00.000Z" as DateTime,
+        scheduledArrivalTime: "2019-02-28T23:15:00.000Z" as DateTime
+      },
+      actualDepartureTime: "2019-02-28T19:45:09.000Z" as DateTime,
+      actualArrivalTime: "2019-02-28T23:16:18.060Z" as DateTime
+    }
+  ]
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Calculate Latest System Response Time" doc:id="cd2dd10b-9c94-47be-ba55-aebe02b4f84a" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="latestSRT" ><![CDATA[%dw 2.0
+output application/java
+---
+(vars.afterSystemAccess - vars.beforeSystemAccess) as Number {unit: "milliseconds"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Calculate Latest Payload Size" doc:id="146cd484-ad3e-4b8a-a839-d6a66e2824bc" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="latestPS" ><![CDATA[%dw 2.0
+output application/java
+var content= write(payload, 'application/json', {indent:true})
+var size= sizeOf(content) / 1024
+---
+size as String {format: '#.00'}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log Latest SRT and PS Values" doc:id="9831f839-2403-4fd8-b78f-1d802482fa7b" message="#['Latest PS: ' ++ vars.latestPS ++ ' Latest SRT: ' ++ vars.latestSRT]"/>
+		<flow-ref doc:name="Update Health Check Stats" doc:id="d9e4e5eb-d214-443e-8bf8-d7f6fb5a7623" name="update-health-statsSub_Flow"/>
+	</flow>
+	<sub-flow name="system-accessSub_Flow" doc:id="ac1dabb7-ed25-4dda-9d20-d1271943384f" >
+		<ee:transform doc:name="System Access Mock" doc:id="d731e70a-182e-4c12-995f-6106cf57c3e2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::Runtime
+output application/java
+---
+{} wait (round(random() * 1000))]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="update-health-statsSub_Flow" doc:id="2593cfc8-54be-4dcf-b6d7-7512ff5be9b7" >
+		<os:retrieve doc:name="Retrieve Number of Requests" doc:id="76761211-3879-43e1-b7ce-0ea917b14077" key="numberOfRequests" objectStore="Object_store" target="numOfReq">
+			<os:default-value><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<ee:transform doc:name="Increment Number of Requests" doc:id="6e34ec3a-95e1-40f6-87ec-b65ee8c60245">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="numOfReq"><![CDATA[%dw 2.0
+output application/java
+---
+(vars.numOfReq as Number) + 1]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieve SRT Running Total" doc:id="2e2b418d-431c-4ea2-99d3-b61dbe79b5df" key="systemResponseTimeRunningTotal" target="srtRunningTotal" objectStore="Object_store">
+			<os:default-value><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<ee:transform doc:name="Update SRT Running Total" doc:id="48bdecc9-13fd-416c-ade3-cf43930957b2" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="srtRunningTotal" ><![CDATA[%dw 2.0
+output application/java
+---
+round((vars.srtRunningTotal + vars.latestSRT))]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<os:retrieve doc:name="Retrieve PS Running Total" doc:id="0861dd01-5265-4d6b-8561-007d15835074" key="payloadLoadSizeRunningTotal" target="psRunningTotal" objectStore="Object_store">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<ee:transform doc:name="Update PS Running Total" doc:id="7824d927-7790-4bb5-b8ce-c833fbb44ae6" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="psRunningTotal" ><![CDATA[%dw 2.0
+output application/java
+---
+(vars.psRunningTotal as Number) + (vars.latestPS as Number)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log All Values" doc:id="95f751c9-4dc2-413e-8dc1-3c0961422107" message="#['srtRT:' ++ vars.srtRunningTotal ++ ' LatestSRT:' ++ vars.latestSRT ++ ' NumReq:' ++ vars.numOfReq ++ ' psRT:' ++ vars.psRunningTotal ++ ' LatestPS:' ++ vars.latestPS]" />
+		<os:store doc:name="Store New SRT Running Total" doc:id="7034759b-65c8-45d2-9e86-10221ffe1e41" key="systemResponseTimeRunningTotal" objectStore="Object_store">
+			<os:value><![CDATA[#[vars.srtRunningTotal]]]></os:value>
+		</os:store>
+		<os:store doc:name="Store New Number of Requests" doc:id="abcd8f71-6794-43f8-93d4-36bf4ab18ea7" key="numberOfRequests" objectStore="Object_store">
+			<os:value><![CDATA[#[vars.numOfReq]]]></os:value>
+		</os:store>
+		<os:store doc:name="Store New PS Running Total" doc:id="308e4d98-2f55-4dab-b819-35dfa2925855" key="payloadLoadSizeRunningTotal" objectStore="Object_store">
+			<os:value ><![CDATA[#[vars.psRunningTotal]]]></os:value>
+		</os:store>
+	</sub-flow>
+	<flow name="get-health-checkFlow" doc:id="59b1fbac-754b-4b42-a309-24b9cee2ece1" >
+		<os:retrieve doc:name="Retrieve Number of Requests" doc:id="dadc5e27-027f-4ad4-99db-0589194c4660" key="numberOfRequests" target="numOfReq" objectStore="Object_store">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<os:retrieve doc:name="Retrieve SRT Running Total" doc:id="9ce11a9b-22e8-4a4d-8432-7e3dd1c2db60" key="systemResponseTimeRunningTotal" target="srtRunningTotal" objectStore="Object_store">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<os:retrieve doc:name="Retrieve PS Running Total" doc:id="ef95a011-0a00-4967-888b-48b6f685fdd0" key="payloadLoadSizeRunningTotal" target="psRunningTotal" objectStore="Object_store">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<ee:transform doc:name="Calculate Running Averages" doc:id="b7ca0563-1dfe-428c-b516-c7ba3e61948b">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="averageSystemResponseTime"><![CDATA[%dw 2.0
+output application/java
+var numberOfRequests = vars.numOfReq as Number
+---
+if (numberOfRequests > 0)
+	round((vars.srtRunningTotal as Number)/numberOfRequests)
+else 
+	0]]></ee:set-variable>
+				<ee:set-variable variableName="averagePayloadSize"><![CDATA[%dw 2.0
+output application/java
+var numberOfRequests = vars.numOfReq as Number
+---
+if (numberOfRequests > 0) 
+	((vars.psRunningTotal as Number)/numberOfRequests)
+else 
+	0]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Check Downstream System Availability" doc:id="0a1feb49-3fc1-45b4-aa4a-70ecb76c7c55" name="ping-downstream-systemSub_Flow"/>
+		<ee:transform doc:name="Create Health Check Response" doc:id="58e29a86-b50b-488f-8f27-1caf4e4eb92a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+input payload application/java
+output application/json
+---
+{
+  apiStatus: {
+    name: "Passenger Reservations System API",
+    status: "OK",
+    statusCode: "200",
+    description: "Health Check successfully retrieved.",
+    transactionId: "1c7968f0-3102-11eb-adc1-0242ac120002",
+    timestamp: now()
+  },
+  health: {
+    name: "Passenger Reservations System API",
+    status: "up",
+    dependency: {
+      name: "Passenger Reservations System",
+      status: if (vars.isSystemAlive) "up" else "down",
+      responseTimeAvg: vars.averageSystemResponseTime as String ++ ' ms',
+      payloadSizeAvg: vars.averagePayloadSize as String {format: '#.00'} ++ ' KB'
+    }
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sub-flow name="ping-downstream-systemSub_Flow" doc:id="5042688b-fa7e-4e3a-b3df-b5a97d012ff9" >
+		<ee:transform doc:name="Ping Downstream System Mock" doc:id="619ae8d4-7734-4305-a910-7852ef055557" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="isSystemAlive" ><![CDATA[%dw 2.0
+output application/java
+---
+if ((round(random() * 1000)) as Number > 800)
+  false
+else
+  true]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>
