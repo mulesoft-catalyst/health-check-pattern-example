@@ -42,6 +42,7 @@ size as String {format: '#.00'}
 #### Running Averages
 A running (a.k.a. rolling or moving) average is an average that continually changes as more data points are collected. A running average is calculated by adding the current 
 value to the sum of the preceding values and dividing by the current count of values.
+
 ![](./docs/images/running_average.png)
 
 #### Average System Response Times
