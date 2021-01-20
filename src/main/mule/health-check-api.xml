@@ -3,7 +3,7 @@
     <http:listener-config name="health-check-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="health-check-api-config" api="resource::85720984-fa27-4bbd-8213-5ecac9e8d93e:health-check-api:1.0.0:raml:zip:health-check-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="health-check-api-config" api="health-check-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="health-check-api-main">
         <http:listener config-ref="health-check-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">

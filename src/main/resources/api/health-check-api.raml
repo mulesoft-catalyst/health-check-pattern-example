@@ -1,0 +1,238 @@
+#%RAML 1.0
+title: Health Check API Example
+version: v1
+mediaType:  application/json
+protocols: [ HTTPS, HTTP ]
+
+# API Traits
+traits:
+  client-id-required:
+    queryParameters:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+  traceable:
+    headers:
+      MULE-CORRELATION-ID:
+        description: The identifier for tracking the execution of a message across multiple systems.
+        type: string
+        example: 2c1fe860-ab8f-11e8-98d0-529269fb1459
+
+#  API Types
+types:
+  # Business Types
+  Airline:
+    displayName: Airline
+    type: object
+    properties:
+      airlineName: string
+  Aircraft:
+    displayName: AircraftModel
+    type: object
+    properties:
+      registrationNumber: string
+  AircraftModel:
+    displayName: Aircraft Description
+    type: object
+    properties:
+      manufacturer: string
+      modelNumber: string
+  Airport:
+    displayName: Airport
+    type: object
+    properties:
+      airportCode: string
+      airportName: string
+  Flight:
+    displayName: Flight
+    type: object
+    properties:
+      aircraft: Aircraft
+      leg: FlightLeg
+      actualDepartureTime: datetime
+      actualArrivalTime: datetime
+    example:
+      aircraft:
+        registrationNumber: "495120-DL"
+      leg:
+        fltNumber: "342"
+        rotation:
+          airline: 
+            airlineName: Southzest
+          aircraftModel: 
+            manufacturer: Boeing
+            modelNumber: "737"
+          frequency: "MTWRFSU"
+          startEffectiveDate: 2019-02-01
+          endEffectiveDate: 2019-03-01
+          legs: ["342", "732", "456", "109"]
+        origin:
+          airportCode: "LAX"
+          airportName: "Los Angeles International Airport"
+        destination:
+          airportCode: "DFW"
+          airportName: "Dallas/Fort Worth International Airport"
+        scheduledDepartureTime: 2019-02-28T16:00:00.000Z
+        scheduledArrivalTime: 2019-02-28T19:00:00.000Z
+      actualDepartureTime: 2019-02-28T16:11:41.090Z
+      actualArrivalTime: 2019-02-28T18:49:18.060Z 
+  Rotation:
+    displayName: Flight Description
+    type: object
+    properties:
+      airline: Airline
+      aircraftModel: AircraftModel
+      # MTWRFSU
+      frequency: string 
+      startEffectiveDate: date-only
+      endEffectiveDate: date-only 
+      legs: string[]
+  FlightLeg:
+    displayName: Flight Leg Description
+    type: object
+    properties:
+      fltNumber: string
+      rotation: Rotation
+      origin: Airport
+      destination: Airport
+      scheduledDepartureTime: datetime
+      scheduledArrivalTime: datetime
+  # API Status
+  API-Status:
+    displayName: API Status
+    description: Extended response status of the API.
+    type: object
+    properties:
+      name: string
+      status: string
+      statusCode: string
+      description: string
+      transactionId: string
+      timestamp: datetime
+  # Health Check
+  System_Status:
+    type: string
+    enum: [ 'up', 'down', 'unknown']
+  HealthCheck:
+    properties:
+      name: string
+      status: System_Status
+  PassengerReservationSystemAPIHealthCheck:
+    type: HealthCheck
+    properties:
+      dependency: PassengerReservationSystemHealthCheck
+  PassengerReservationSystemHealthCheck:      
+    type: HealthCheck
+    properties:
+      responseTimeAvg: integer
+      payloadSizeAvg: integer
+  # Response Types
+  FlightsResponse:
+    type: object
+    properties:
+      apiStatus: API-Status
+      flights: Flight[]
+  PassengerReservationSystemAPIHealthCheckResponse:
+    type: object
+    properties:
+      apiStatus: API-Status
+      health: PassengerReservationSystemAPIHealthCheck
+
+# API Health Check
+/health:
+  displayName: Health Check
+  is: [client-id-required]
+  get:
+    responses:
+      200:
+        body: 
+          type: PassengerReservationSystemAPIHealthCheckResponse
+          example:
+            apiStatus: 
+              name: Passenger Reservations System API
+              status: OK
+              statusCode: '200'
+              description: Health Check successfully retrieved.
+              transactionId: 1c7968f0-3102-11eb-adc1-0242ac120002
+              timestamp: 2019-09-09T12:13:27.372-06:00
+            health:
+              name: Passenger Reservations System API
+              status: up
+              dependency:
+                name: Passenger Reservations System
+                status: up
+                responseTimeAvg: 813
+                payloadSizeAvg: 1256
+# API Resource          
+/flights:
+  displayName: Flights
+  description: A given resource.
+  is: [client-id-required]
+  get:
+    displayName: Retrieve the resource
+    description: Retrieve the resource
+    is: [traceable]
+    responses:
+      200:
+        body: 
+          type: FlightsResponse
+          example:
+            apiStatus: 
+              name: Passenger Reservations System API
+              status: OK
+              statusCode: '200'
+              description: Flights successfully retrieved.
+              transactionId: 1c7968f0-3102-11eb-adc1-0242ac120002
+              timestamp: 2019-09-09T12:13:27.372-06:00
+            flights:
+              -      
+                aircraft:
+                  registrationNumber: "495120-DL"
+                leg:
+                  fltNumber: "342"
+                  rotation:
+                    airline: 
+                      airlineName: Southzest
+                    aircraftModel: 
+                      manufacturer: Boeing
+                      modelNumber: "737"
+                    frequency: "MTWRFSU"
+                    startEffectiveDate: 2019-02-01
+                    endEffectiveDate: 2019-03-01
+                    legs: ["342", "732", "456", "109"]
+                  origin:
+                    airportCode: "LAX"
+                    airportName: "Los Angeles International Airport"
+                  destination:
+                    airportCode: "DFW"
+                    airportName: "Dallas/Fort Worth International Airport"
+                  scheduledDepartureTime: 2019-02-28T16:00:00.000Z
+                  scheduledArrivalTime: 2019-02-28T19:00:00.000Z
+                actualDepartureTime: 2019-02-28T16:11:41.090Z
+                actualArrivalTime: 2019-02-28T18:49:18.060Z 
+              -
+                aircraft:
+                  registrationNumber: "849388-CL"
+                leg:
+                  fltNumber: "123"
+                  rotation:
+                    airline: 
+                      airlineName: Southzest
+                    aircraftModel: 
+                      manufacturer: Boeing
+                      modelNumber: "737"
+                    frequency: "MTWRFSU"
+                    startEffectiveDate: 2019-02-01
+                    endEffectiveDate: 2019-03-01
+                    legs: ["898", "987", "872", "459", "123"]
+                  origin:
+                    airportCode: "DFW"
+                    airportName: "Dallas/Fort Worth International Airport"
+                  destination:
+                    airportCode: "DCA"
+                    airportName: "Ronald Reagan Washington National Airport"
+                  scheduledDepartureTime: 2019-02-28T19:40:00.000Z
+                  scheduledArrivalTime: 2019-02-28T23:15:00.000Z
+                actualDepartureTime: 2019-02-28T19:45:09.000Z
+                actualArrivalTime: 2019-02-28T23:16:18.060Z 
