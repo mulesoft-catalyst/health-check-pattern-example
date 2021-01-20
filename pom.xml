@@ -13,7 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<app.runtime>4.3.0-20200824</app.runtime>
+		<app.runtime>4.3.0</app.runtime>
 		<mule.maven.plugin.version>3.3.5</mule.maven.plugin.version>
 	</properties>
 
@@ -43,13 +43,6 @@
             <artifactId>mule-sockets-connector</artifactId>
             <version>1.2.0</version>
             <classifier>mule-plugin</classifier>
-        </dependency>
-		<dependency>
-            <groupId>85720984-fa27-4bbd-8213-5ecac9e8d93e</groupId>
-            <artifactId>health-check-api</artifactId>
-            <version>1.0.0</version>
-            <classifier>raml</classifier>
-            <type>zip</type>
         </dependency>
     	<dependency>
             <groupId>org.mule.modules</groupId>
